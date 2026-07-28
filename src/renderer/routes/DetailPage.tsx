@@ -19,10 +19,10 @@ export default function DetailPage() {
   }
 
   return (
-    <section className="flex h-screen flex-col gap-3">
-      <div className="flex items-center gap-2 text-xs">
-        {item.sourceApp && <span className="text-slate-500">{item.sourceApp}</span>}
-        <time className="ml-auto text-slate-400" dateTime={item.copiedAt}>
+    <section className="flex h-65 flex-col gap-2.5">
+      <div className="flex items-end gap-2 text-xs">
+        {item.sourceApp && <span className="text-slate-400">{item.sourceApp}</span>}
+        <time className="ml-auto text-slate-300" dateTime={item.copiedAt}>
           {formatAbsoluteTime(item.copiedAt)}
         </time>
       </div>

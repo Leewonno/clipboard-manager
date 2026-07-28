@@ -28,7 +28,7 @@ export default function ClipboardListItem({ item }: ClipboardListItemProps) {
           {item.type === 'image' ? (
             <img src={item.content} alt="복사된 이미지" />
           ) : (
-            <p className="line-clamp-3 whitespace-pre-wrap break-all">{item.content}</p>
+            <p className="line-clamp-3 break-all">{item.content}</p>
           )}
         </div>
       </button>

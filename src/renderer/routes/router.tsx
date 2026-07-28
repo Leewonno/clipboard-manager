@@ -13,8 +13,9 @@ export const router = createHashRouter([
   {
     path: '/',
     Component: RootLayout,
-    children: [{ index: true, Component: HomePage }],
+    children: [
+      { index: true, Component: HomePage },
+      { path: '/detail', Component: DetailPage },
+    ],
   },
-  // 자식창 전용 화면이다. 메인 창의 헤더가 필요 없어서 RootLayout 밖에 둔다.
-  { path: '/detail', Component: DetailPage },
 ]);

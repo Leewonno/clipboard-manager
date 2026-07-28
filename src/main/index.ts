@@ -67,13 +67,12 @@ const openDetailWindow = (parent: BrowserWindow | null, item: ClipboardItem) => 
   }
 
   detailWindow = new BrowserWindow({
-    width: 600,
-    height: 400,
-    // 부모를 지정하면 자식창이 항상 부모 위에 뜨고 부모가 닫힐 때 함께 닫힌다.
+    width: 350,
+    height: 350,
+    // 부모를 지정하면 자식창이 항상 부모 위에 뜨고 부모가 닫힐 때 함께 닫힘
     parent: parent ?? undefined,
-    // true면 부모창을 막는 모달창이 된다.
+    // true면 부모창을 막는 모달창으로 사용됨
     modal: false,
-    // 로드가 끝나기 전 빈 화면이 깜빡이지 않도록 ready-to-show에서 띄운다.
     show: false,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),

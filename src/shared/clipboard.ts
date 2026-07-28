@@ -5,13 +5,10 @@ export type ClipboardItemType = 'text' | 'link' | 'image' | 'file';
 export interface ClipboardItem {
   id: string;
   type: ClipboardItemType;
-  /**
-   * 목록에 보여줄 내용이다.
-   * 이미지는 본문이 커서 따로 파일로 저장하고, 여기에는 그 파일을 가리키는 `clip-image://` 주소만 담는다.
-   */
+  /** 목록에 보여줄 내용 (이미지는 본문이 커서 따로 파일로 저장하고, 여기에는 그 파일을 가리키는 `clip-image://` 주소만) */
   content: string;
-  /** 복사가 일어난 앱 이름이다. 출처를 알 수 없으면 undefined다. */
+  /** 복사가 일어난 앱 이름 (알 수 없으면 undefined) */
   sourceApp?: string | null;
-  /** 복사 시각(ISO 8601). */
+  /** 복사 시간(ISO 8601) */
   copiedAt: string;
 }
