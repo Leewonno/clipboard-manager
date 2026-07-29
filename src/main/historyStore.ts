@@ -31,7 +31,7 @@ const isClipboardItem = (value: unknown): value is ClipboardItem => {
 };
 
 /**
- * 지난번에 저장해 둔 기록을 읽어 온다. 첫 실행이거나 파일이 깨져 있으면 빈 목록으로 시작한다.
+ * 저장해 둔 기록 읽기 (사용되지 않는 이미지 파일도 함께 정리)
  * 기록을 읽는 김에 짝이 맞지 않는 이미지 파일도 함께 정리한다.
  */
 export const loadHistory = async (): Promise<ClipboardItem[]> => {
