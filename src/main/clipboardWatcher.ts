@@ -4,7 +4,7 @@ import { BrowserWindow, clipboard } from 'electron';
 import type { ClipboardItem, ClipboardItemType } from '../shared/clipboard';
 import { IPC_CHANNEL } from '../shared/ipc';
 import { loadHistory, scheduleSave } from './historyStore';
-import { removeImage, saveImage } from './imageStore';
+import { removeAllImages, removeImage, saveImage } from './imageStore';
 import { readSourceApp } from './sourceApp';
 
 // 클립보드 복사 체크 간격
@@ -22,7 +22,7 @@ const CONCEALED_FORMATS = [
   'ExcludeClipboardContentFromMonitorProcessing',
 ];
 
-/** 최신순으로 쌓이는 기록이다. 바뀔 때마다 디스크에 저장해 앱을 껐다 켜도 남는다. */
+/** 최신순 기록 */
 const history: ClipboardItem[] = [];
 
 /** 저장해 둔 기록을 다 읽어 왔는지다. 렌더러가 그전에 목록을 물어보면 이걸 기다렸다 답한다. */
@@ -109,11 +109,11 @@ const readSnapshot = (): ClipboardSnapshot | null => {
   return null;
 };
 
-/** 열려 있는 모든 창에 새 기록을 알린다. 구독하지 않는 창은 그냥 무시한다. */
-const broadcast = (item: ClipboardItem) => {
+/** 열려 있는 모든 창에 기록이 바뀌었음을 알린다. 구독하지 않는 창은 그냥 무시한다. */
+const broadcast = (channel: string, payload: unknown) => {
   for (const window of BrowserWindow.getAllWindows()) {
     if (!window.isDestroyed()) {
-      window.webContents.send(IPC_CHANNEL.clipboardItemAdded, item);
+      window.webContents.send(channel, payload);
     }
   }
 };
@@ -157,13 +157,59 @@ const pollOnce = async () => {
   dropOverflow();
 
   scheduleSave(history);
-  broadcast(item);
+  broadcast(IPC_CHANNEL.clipboardItemAdded, item);
 };
 
 /** 최신순 기록을 돌려준다. 렌더러가 처음 켜질 때 한 번 받아 간다. */
 export const getClipboardHistory = async (): Promise<ClipboardItem[]> => {
   await hydration;
   return history;
+};
+
+/**
+ * 기록 하나를 지운다. 이미지면 본문 파일도 같이 치운다.
+ * 이미 없는 id면 아무것도 하지 않고 false를 돌려준다.
+ */
+export const deleteClipboardItem = async (id: string): Promise<boolean> => {
+  await hydration;
+
+  const index = history.findIndex((item) => item.id === id);
+  if (index === -1) {
+    return false;
+  }
+
+  const [removed] = history.splice(index, 1);
+  if (removed.type === 'image') {
+    await removeImage(removed.id);
+  }
+
+  scheduleSave(history);
+  // 지운 항목을 목록에 그대로 두지 않도록 열려 있는 창에 함께 알린다.
+  broadcast(IPC_CHANNEL.clipboardItemRemoved, id);
+
+  return true;
+};
+
+/**
+ * 기록을 모두 지운다. 이미지 본문 파일도 폴더째 함께 치운다.
+ * 이미 비어 있으면 아무것도 하지 않고 false를 돌려준다.
+ */
+export const deleteClipboardAllItem = async (): Promise<boolean> => {
+  await hydration;
+
+  if (history.length === 0) {
+    return false;
+  }
+
+  // 감시 중인 배열을 그대로 써야 해서 새 배열로 바꾸지 않고 길이만 0으로 만든다.
+  history.length = 0;
+  await removeAllImages();
+
+  scheduleSave(history);
+  // 목록을 통째로 비워야 해서 항목마다 알리지 않고 한 번만 알린다.
+  broadcast(IPC_CHANNEL.clipboardCleared, undefined);
+
+  return true;
 };
 
 /** 클립보드 감시를 시작한다. app이 ready된 뒤에 호출해야 한다. */

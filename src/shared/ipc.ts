@@ -14,4 +14,15 @@ export const IPC_CHANNEL = {
 
   /** 메인 → 렌더러. 새로 복사된 항목이 생겼음을 알린다. */
   clipboardItemAdded: 'clipboard:item-added',
+
+  /** 자식 -> 메인. 삭제할 항목이 생겼음을 알린다. */
+  deleteItem: 'clipboard:delete-item',
+
+  deleteAllItem: 'clipboard:delete-all-item',
+
+  /** 메인 → 렌더러. 기록 하나가 지워졌음을 알린다. 페이로드는 지워진 항목의 id다. */
+  clipboardItemRemoved: 'clipboard:item-removed',
+
+  /** 메인 → 렌더러. 기록이 통째로 비워졌음을 알린다. 페이로드는 없다. */
+  clipboardCleared: 'clipboard:cleared',
 } as const;

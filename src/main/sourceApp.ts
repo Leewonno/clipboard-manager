@@ -1,3 +1,7 @@
+// ===============================================
+// 복사 실행한 어플리케이션 이름 불러오기
+// ===============================================
+
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { clipboard } from 'electron';
@@ -17,7 +21,7 @@ const SOURCE_FORMAT = 'org.nspasteboard.source';
 const LSAPPINFO = '/usr/bin/lsappinfo';
 
 /**
- * "LSDisplayName"="Finder" -> "Finder" 이름만 떼어 낸다.
+ * "LSDisplayName"="Finder" -> "Finder" 이름만 떼어 냄
  */
 const parseDisplayName = (stdout: string): string | null =>
   stdout.trim().match(/^"LSDisplayName"="(.+)"$/)?.[1] || null;
@@ -29,7 +33,7 @@ const lsappinfo = async (...args: string[]): Promise<string> => {
 
 /**
  * 번들 ID를 화면에 보여 줄 이름으로 바꿈
- * 조회에 실패하면 마지막 마디로 때운다("com.google.Chrome" → "Chrome").
+ * 조회에 실패하면 마지막 마디로 ("com.google.Chrome" → "Chrome")
  */
 const resolveBundleId = async (bundleId: string): Promise<string> => {
   try {
@@ -43,15 +47,14 @@ const resolveBundleId = async (bundleId: string): Promise<string> => {
   return bundleId.split('.').pop() || bundleId;
 };
 
-/** 지금 최전면에 있는 앱 이름이다. */
+/** 지금 최전면에 있는 앱 이름 */
 const readFrontmostAppName = async (): Promise<string | null> => {
   try {
-    // 최전면 앱은 ASN(Application Serial Number)으로 나와서 이름을 한 번 더 물어봐야 한다.
+    // 최전면 앱은 ASN(Application Serial Number)으로 나와서 이름을 한 번 더 물어봐야 함
     const asn = (await lsappinfo('front')).trim();
     if (!asn) {
       return null;
     }
-
     return parseDisplayName(await lsappinfo('info', '-only', 'name', asn));
   } catch {
     return null;
@@ -59,18 +62,16 @@ const readFrontmostAppName = async (): Promise<string | null> => {
 };
 
 /**
- * 복사한 앱 이름을 / 알 수 없으면 null
+ * 복사한 앱 이름을 리턴 / 알 수 없으면 null
  * Windows·Linux는 네이티브 호출이 필요해서 아직 null
  */
 export const readSourceApp = async (): Promise<string | null> => {
   if (process.platform !== 'darwin') {
     return null;
   }
-
   const declared = clipboard.read(SOURCE_FORMAT).trim();
   if (declared) {
     return resolveBundleId(declared);
   }
-
   return readFrontmostAppName();
 };

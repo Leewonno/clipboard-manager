@@ -3,7 +3,7 @@ import fsp from 'node:fs/promises';
 import path from 'node:path';
 import { app } from 'electron';
 import type { ClipboardItem, ClipboardItemType } from '../shared/clipboard';
-import { hasImage, pruneOrphanImages } from './imageStore';
+import { hasImage, pruneImages } from './imageStore';
 
 /** 연속으로 복사할 때 매번 디스크를 건드리지 않도록 이만큼 모았다가 한 번에 쓴다. */
 const SAVE_DEBOUNCE_MS = 500;
@@ -40,7 +40,6 @@ export const loadHistory = async (): Promise<ClipboardItem[]> => {
   try {
     parsed = JSON.parse(await fsp.readFile(historyPath(), 'utf-8'));
   } catch (error) {
-    // 파일이 아직 없는 첫 실행이 대부분이라 조용히 넘어간다.
     if ((error as NodeJS.ErrnoException).code !== 'ENOENT') {
       console.error('기록을 읽지 못해 새로 시작합니다.', error);
     }
@@ -55,7 +54,7 @@ export const loadHistory = async (): Promise<ClipboardItem[]> => {
   );
   const history = items.filter((_, index) => alive[index]);
 
-  await pruneOrphanImages(history);
+  await pruneImages(history);
 
   return history;
 };

@@ -1,3 +1,7 @@
+// ===============================================
+// 이미지 파일 CRUD
+// ===============================================
+
 import fsp from 'node:fs/promises';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
@@ -5,27 +9,27 @@ import { app, net, protocol } from 'electron';
 import type { ClipboardItem } from '../shared/clipboard';
 
 /**
- * 이미지를 렌더러에 보여 줄 때 쓰는 사설 스킴이다.
+ * 이미지를 렌더러에 보여 줄 때 쓰는 사설 스킴
  * 개발 중에는 화면이 http://localhost에서 뜨는데 거기서는 file:// 이미지가 막혀서, 스킴을 직접 하나 판다.
  */
 const SCHEME = 'clip-image';
 
-/** standard 스킴이라 URL이 `스킴://호스트/경로`로 파싱된다. 호스트는 쓰지 않아 고정값을 둔다. */
+/** standard 스킴이라 URL이 `스킴://호스트/경로`로 파싱 */
 const HOST = 'local';
 
-/** 이미지 본문이 쌓이는 폴더다. app.getPath는 ready 전에는 못 부르는 경우가 있어 그때그때 계산한다. */
+/** 이미지 본문이 쌓이는 폴더 / app.getPath는 ready 전에는 못 부르는 경우가 있어 그때그때 계산 */
 const imagesDir = () => path.join(app.getPath('userData'), 'images');
 
 const fileNameOf = (id: string) => `${id}.png`;
 
 const imagePathOf = (fileName: string) => path.join(imagesDir(), fileName);
 
-/** 렌더러가 <img src>에 그대로 넣을 수 있는 주소다. */
+/** 렌더러가 <img src>에 그대로 넣을 수 있는 주소 */
 export const imageUrl = (id: string) => `${SCHEME}://${HOST}/${fileNameOf(id)}`;
 
 /**
- * 스킴에 권한을 붙여 등록한다. ready 전에 한 번만 호출해야 해서 감시 시작과 분리해 뒀다.
- * standard가 없으면 URL이 제대로 쪼개지지 않고, secure가 없으면 화면에서 안전하지 않은 리소스로 막힌다.
+ * 스킴에 권한을 붙여 등록 / ready 전에 한 번만 호출해야 해서 감시 시작과 분리
+ * standard가 없으면 URL이 제대로 쪼개지지 않고, secure가 없으면 화면에서 안전하지 않은 리소스로 막힘
  */
 export const registerImageScheme = () => {
   protocol.registerSchemesAsPrivileged([
@@ -33,7 +37,7 @@ export const registerImageScheme = () => {
   ]);
 };
 
-/** `clip-image://local/<id>.png` 요청을 이미지 폴더 안의 파일로 연결한다. ready 뒤에 호출한다. */
+/** `clip-image://local/<id>.png` 요청을 이미지 폴더 안의 파일로 연결 (ready 뒤에 호출) */
 export const handleImageProtocol = () => {
   protocol.handle(SCHEME, (request) => {
     const { pathname } = new URL(request.url);
@@ -55,10 +59,16 @@ export const saveImage = async (id: string, png: Buffer): Promise<string> => {
   return imageUrl(id);
 };
 
-/** 목록에서 밀려난 이미지를 지운다. 이미 없으면 조용히 넘어간다. */
+/** 목록에서 밀려난 이미지를 지우기 */
 export const removeImage = (id: string) => fsp.rm(imagePathOf(fileNameOf(id)), { force: true });
 
-/** 기록은 남아 있는데 본문 파일이 사라졌는지 확인한다. */
+/**
+ * 이미지를 전부 지운다. 기록을 통째로 비울 때 쓴다.
+ * 파일을 하나씩 훑지 않고 폴더째 지운다. 폴더는 다음 saveImage가 다시 만든다.
+ */
+export const removeAllImages = () => fsp.rm(imagesDir(), { recursive: true, force: true });
+
+/** 기록은 남아 있는데 본문 파일이 사라졌는지 확인 */
 export const hasImage = (id: string) =>
   fsp
     .access(imagePathOf(fileNameOf(id)))
@@ -66,10 +76,9 @@ export const hasImage = (id: string) =>
     .catch(() => false);
 
 /**
- * 어느 기록도 참조하지 않는 이미지 파일을 치운다.
- * 저장이 밀린 채로 앱이 비정상 종료되면 파일만 남을 수 있어서 시작할 때 한 번 훑는다.
+ * 어느 기록도 참조하지 않는 이미지 파일 정리 (시작할 때 한 번 훑음)
  */
-export const pruneOrphanImages = async (history: ClipboardItem[]) => {
+export const pruneImages = async (history: ClipboardItem[]) => {
   const keep = new Set(
     history.filter((item) => item.type === 'image').map((item) => fileNameOf(item.id)),
   );

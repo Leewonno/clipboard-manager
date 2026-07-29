@@ -1,9 +1,15 @@
+// ===============================================
+// 앱의 메인 프로세스 코드
+// ===============================================
+
 import path from 'node:path';
 import { app, BrowserWindow, ipcMain } from 'electron';
 import started from 'electron-squirrel-startup';
 import type { ClipboardItem } from '../shared/clipboard';
 import { IPC_CHANNEL } from '../shared/ipc';
 import {
+  deleteClipboardAllItem,
+  deleteClipboardItem,
   getClipboardHistory,
   startClipboardWatcher,
   stopClipboardWatcher,
@@ -96,11 +102,28 @@ const registerIpcHandlers = () => {
   ipcMain.handle(IPC_CHANNEL.getDetailItem, () => detailItem);
 
   ipcMain.handle(IPC_CHANNEL.getHistory, () => getClipboardHistory());
+
+  ipcMain.handle(IPC_CHANNEL.deleteItem, async (_event, id: string) => {
+    await deleteClipboardItem(id);
+
+    // 지워진 항목을 계속 띄워 둘 이유가 없어 자식창을 닫는다.
+    if (detailItem?.id === id && detailWindow && !detailWindow.isDestroyed()) {
+      detailWindow.close();
+    }
+  });
+
+  ipcMain.handle(IPC_CHANNEL.deleteAllItem, async () => {
+    await deleteClipboardAllItem();
+
+    // 남아 있는 기록이 없으니 상세창도 띄워 둘 이유가 없다.
+    if (detailWindow && !detailWindow.isDestroyed()) {
+      detailWindow.close();
+    }
+  });
 };
 
-// 이 메서드는 Electron의 초기화가 끝나고 브라우저 창을
-// 생성할 준비가 되었을 때 호출된다.
-// 일부 API는 이 이벤트가 발생한 이후에만 사용할 수 있다.
+// 이 메서드는 Electron의 초기화가 끝나고 브라우저 창을 생성할 준비가 되었을 때 호출
+// 일부 API는 이 이벤트가 발생한 이후에만 사용 가능
 app.on('ready', () => {
   handleImageProtocol();
   registerIpcHandlers();
@@ -124,12 +147,11 @@ app.on('window-all-closed', () => {
 });
 
 app.on('activate', () => {
-  // OS X에서는 독 아이콘을 클릭했을 때 열려 있는 창이 없으면
-  // 앱의 창을 다시 생성하는 것이 일반적이다.
+  // 독 아이콘을 클릭했을 때 열려 있는 창이 없으면 앱 창을 다시 생성
   if (BrowserWindow.getAllWindows().length === 0) {
     createWindow();
   }
 });
 
-// 이 파일에는 앱의 나머지 메인 프로세스 코드를 작성할 수 있다.
-// 별도의 파일로 분리한 뒤 여기서 import 해도 된다.
+// PC 로그인 시 자동 실행. 개발 모드에서는 등록되지 않으니 패키징 후 확인해야 한다.
+app.setLoginItemSettings({ openAtLogin: true });
