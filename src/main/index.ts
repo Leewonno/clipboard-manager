@@ -15,7 +15,13 @@ import {
   stopClipboardWatcher,
 } from './clipboardWatcher';
 import { flushHistory } from './historyStore';
-import { handleImageProtocol, registerImageScheme } from './imageStore';
+import { handleImageProtocol, openImageInViewer, registerImageScheme } from './imageStore';
+import { getSystemInfo } from './systemInfo';
+import {
+  forwardWindowStateEvents,
+  registerWindowControlHandlers,
+  titleBarWindowOptions,
+} from './windowFrame';
 
 // Windows에서 설치/제거 시 바로가기 생성/삭제를 처리한다.
 if (started) {
@@ -30,6 +36,9 @@ let detailWindow: BrowserWindow | null = null;
 
 /** 자식창이 보여줄 항목이다. 창이 뜬 뒤 렌더러가 IPC로 읽어 간다. */
 let detailItem: ClipboardItem | null = null;
+
+/** 앱 정보 화면(자식창)이다. 보여 줄 내용이 하나뿐이라 여러 개 띄우지 않는다. */
+let aboutWindow: BrowserWindow | null = null;
 
 /**
  * 렌더러 화면을 창에 로드한다.
@@ -50,10 +59,13 @@ const createWindow = () => {
   const mainWindow = new BrowserWindow({
     width: 400,
     height: 600,
+    ...titleBarWindowOptions,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
     },
   });
+
+  forwardWindowStateEvents(mainWindow);
 
   // 그리고 앱의 index.html을 로드한다.
   loadRenderer(mainWindow, '/');
@@ -80,10 +92,13 @@ const openDetailWindow = (parent: BrowserWindow | null, item: ClipboardItem) => 
     // true면 부모창을 막는 모달창으로 사용됨
     modal: false,
     show: false,
+    ...titleBarWindowOptions,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
     },
   });
+
+  forwardWindowStateEvents(detailWindow);
 
   detailWindow.once('ready-to-show', () => detailWindow?.show());
   detailWindow.on('closed', () => {
@@ -94,7 +109,38 @@ const openDetailWindow = (parent: BrowserWindow | null, item: ClipboardItem) => 
   loadRenderer(detailWindow, '/detail');
 };
 
+/** 앱 정보를 자식창에 띄운다. 이미 열려 있으면 앞으로 가져오기만 한다. */
+const openAboutWindow = (parent: BrowserWindow | null) => {
+  if (aboutWindow && !aboutWindow.isDestroyed()) {
+    aboutWindow.focus();
+    return;
+  }
+
+  aboutWindow = new BrowserWindow({
+    width: 360,
+    height: 540,
+    parent: parent ?? undefined,
+    modal: false,
+    show: false,
+    ...titleBarWindowOptions,
+    webPreferences: {
+      preload: path.join(__dirname, 'preload.js'),
+    },
+  });
+
+  forwardWindowStateEvents(aboutWindow);
+
+  aboutWindow.once('ready-to-show', () => aboutWindow?.show());
+  aboutWindow.on('closed', () => {
+    aboutWindow = null;
+  });
+
+  loadRenderer(aboutWindow, '/about');
+};
+
 const registerIpcHandlers = () => {
+  registerWindowControlHandlers();
+
   ipcMain.handle(IPC_CHANNEL.openDetailWindow, (event, item: ClipboardItem) => {
     openDetailWindow(BrowserWindow.fromWebContents(event.sender), item);
   });
@@ -102,6 +148,19 @@ const registerIpcHandlers = () => {
   ipcMain.handle(IPC_CHANNEL.getDetailItem, () => detailItem);
 
   ipcMain.handle(IPC_CHANNEL.getHistory, () => getClipboardHistory());
+
+  ipcMain.handle(IPC_CHANNEL.openAboutWindow, (event) => {
+    openAboutWindow(BrowserWindow.fromWebContents(event.sender));
+  });
+
+  ipcMain.handle(IPC_CHANNEL.getSystemInfo, () => getSystemInfo());
+
+  ipcMain.handle(IPC_CHANNEL.openImage, async (_event, id: string) => {
+    const error = await openImageInViewer(id);
+    // 빈 문자열이면 성공. 파일이 지워졌거나 연결된 앱이 없으면 사유가 담겨 온다.
+    if (error) console.error('이미지 열기 실패:', error);
+    return error;
+  });
 
   ipcMain.handle(IPC_CHANNEL.deleteItem, async (_event, id: string) => {
     await deleteClipboardItem(id);
@@ -154,4 +213,4 @@ app.on('activate', () => {
 });
 
 // PC 로그인 시 자동 실행. 개발 모드에서는 등록되지 않으니 패키징 후 확인해야 한다.
-app.setLoginItemSettings({ openAtLogin: true });
+// app.setLoginItemSettings({ openAtLogin: true });

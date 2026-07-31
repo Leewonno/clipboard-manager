@@ -1,5 +1,5 @@
 {
-  "name": "Clipboard Manager",
+  "name": "clipboard-manager",
   "productName": "Clipboard Manager",
   "version": "0.0.1",
   "description": "My Electron application description",
@@ -9,6 +9,7 @@
     "start": "electron-forge start",
     "package": "electron-forge package",
     "make": "electron-forge make",
+    "make:win": "node scripts/generateInstallerNsh.js && electron-forge make --platform=win32 --arch=x64",
     "publish": "electron-forge publish",
     "lint": "biome lint .",
     "format": "biome format --write .",

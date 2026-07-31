@@ -25,4 +25,28 @@ export const IPC_CHANNEL = {
 
   /** 메인 → 렌더러. 기록이 통째로 비워졌음을 알린다. 페이로드는 없다. */
   clipboardCleared: 'clipboard:cleared',
+
+  /** 렌더러 → 메인. 직접 만든 타이틀 바의 최소화 버튼이다. */
+  windowMinimize: 'window:minimize',
+
+  /** 렌더러 → 메인. 최대화와 복원을 번갈아 한다. */
+  windowToggleMaximize: 'window:toggle-maximize',
+
+  /** 렌더러 → 메인. 직접 만든 타이틀 바의 닫기 버튼이다. */
+  windowClose: 'window:close',
+
+  /** 렌더러 → 메인. 버튼 아이콘을 처음 그릴 때 필요한 최대화 여부를 받아 온다. */
+  windowIsMaximized: 'window:is-maximized',
+
+  /** 메인 → 렌더러. 최대화 여부가 바뀌었음을 알린다. 페이로드는 최대화 여부다. */
+  windowMaximizedChanged: 'window:maximized-changed',
+
+  /** 렌더러 → 메인. 이미지를 OS 기본 뷰어로 연다. */
+  openImage: 'clipboard:open-image',
+
+  /** 렌더러 → 메인. 앱 정보를 보여 주는 자식창을 연다. */
+  openAboutWindow: 'app:open-about-window',
+
+  /** 앱 정보 창 렌더러 → 메인. 앱 버전과 이 PC의 사양을 받아 온다. */
+  getSystemInfo: 'app:get-system-info',
 } as const;

@@ -48,7 +48,7 @@ export default function ConfirmDialog({
           <button
             type="button"
             className={cn(
-              'rounded-md whitespace-nowrap border border-slate-200 px-3 py-1.5 text-red-600 transition-colors hover:border-slate-300 hover:bg-slate-50',
+              'cursor-pointer rounded-md whitespace-nowrap border border-slate-200 px-3 py-1.5 text-red-600 transition-colors hover:border-slate-300 hover:bg-slate-50',
               triggerClassName,
             )}
           />

@@ -1,3 +1,4 @@
+import { Settings } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import type { ClipboardItem } from '../../shared/clipboard';
@@ -41,9 +42,8 @@ export default function HomePage() {
   const handleAllDeleteItem = async () => {
     try {
       await window.clipboardApi.deleteAllItem();
-    } catch (e) {
-      console.error(e);
-      toast.error('삭제하지 못했습니다');
+    } catch {
+      toast.error('삭제에 실패했습니다.');
     }
   };
 
@@ -62,6 +62,15 @@ export default function HomePage() {
             confirmLabel="삭제"
             onConfirm={handleAllDeleteItem}
           />
+          <button
+            type="button"
+            onClick={() => window.appApi.openAboutWindow()}
+            aria-label="앱 정보"
+            title="앱 정보"
+            className="cursor-pointer rounded-md border border-slate-200 p-1.5 text-slate-500 transition-colors hover:border-slate-300 hover:bg-slate-50"
+          >
+            <Settings className="size-4" />
+          </button>
         </div>
       </div>
       {/* Home 클립보드 목록 */}

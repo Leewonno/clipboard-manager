@@ -20,12 +20,12 @@ export default function DetailPage() {
     try {
       await window.clipboardApi.deleteItem(item.id);
     } catch (error) {
-      console.error('기록을 지우지 못했습니다.', error);
-      toast.error('삭제하지 못했습니다');
+      console.error('삭제에 실패했습니다.', error);
+      toast.error('삭제에 실패했습니다.');
     }
   };
 
-  const handleCopy = async (content) => {
+  const handleCopy = async (content: string) => {
     await navigator.clipboard.writeText(content);
     toast.success('복사했습니다');
   };
@@ -47,9 +47,15 @@ export default function DetailPage() {
 
       {/* 이미지는 content가 저장된 파일을 가리키는 주소라 그대로 그린다. 나머지는 원문을 보여 준다. */}
       {item.type === 'image' ? (
-        <div className="flex items-center justify-center h-full overflow-auto rounded-lg border border-slate-200 bg-slate-50 p-4">
+        <button
+          type="button"
+          onClick={() => {
+            window.clipboardApi.openImage(item.id);
+          }}
+          className="flex items-center justify-center h-full overflow-auto rounded-lg border border-slate-200 bg-slate-50 p-4"
+        >
           <img src={item.content} alt="복사한 이미지" className="mx-auto max-w-full" />
-        </div>
+        </button>
       ) : (
         <button
           type="button"

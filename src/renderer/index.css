@@ -122,6 +122,18 @@
   --sidebar-ring: oklch(0.556 0 0);
 }
 
+/* 직접 만든 타이틀 바에서 창을 끌 수 있는 영역을 지정한다. 표준화가 진행 중이라 -webkit- 접두사도 함께 쓴다. */
+@utility app-drag {
+  app-region: drag;
+  -webkit-app-region: drag;
+}
+
+/* 끌기 영역 안에 있는 버튼은 이걸로 빼 줘야 클릭이 먹는다. */
+@utility app-no-drag {
+  app-region: no-drag;
+  -webkit-app-region: no-drag;
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;

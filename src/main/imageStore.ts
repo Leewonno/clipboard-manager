@@ -5,7 +5,7 @@
 import fsp from 'node:fs/promises';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { app, net, protocol } from 'electron';
+import { app, net, protocol, shell } from 'electron';
 import type { ClipboardItem } from '../shared/clipboard';
 
 /**
@@ -52,6 +52,12 @@ export const handleImageProtocol = () => {
   });
 };
 
+/** 기본 이미지 뷰어(미리보기 / 사진)로 연다. 실패하면 사유 문자열이 돌아온다. */
+export const openImageInViewer = (id: string) => shell.openPath(imagePathOf(fileNameOf(id)));
+
+/** 파일 탐색기(Finder / 탐색기)에서 해당 파일을 띄워 준다. */
+export const revealImage = (id: string) => shell.showItemInFolder(imagePathOf(fileNameOf(id)));
+
 /** 이미지를 파일로 남기고 렌더러가 그릴 수 있는 주소를 돌려준다. */
 export const saveImage = async (id: string, png: Buffer): Promise<string> => {
   await fsp.mkdir(imagesDir(), { recursive: true });
@@ -59,7 +65,7 @@ export const saveImage = async (id: string, png: Buffer): Promise<string> => {
   return imageUrl(id);
 };
 
-/** 목록에서 밀려난 이미지를 지우기 */
+/** 목록에서 밀려난 이미지 지우기 */
 export const removeImage = (id: string) => fsp.rm(imagePathOf(fileNameOf(id)), { force: true });
 
 /**
